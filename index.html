@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>디지털 국어사전 탈출 작전</title>
+<title>문맥수사대: 디지털 국어사전 탈출 작전</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding:wght@400;700&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
 
@@ -342,7 +342,7 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 <!-- HUD -->
 <div id="hud">
   <div class="hud-left">
-    <div class="hud-logo glitch" data-text="국어사전 v2.4">국어사전 v2.4</div>
+    <div class="hud-logo glitch" data-text="문맥수사대">문맥수사대</div>
     <div class="hud-room" id="hud-room-text">ROOM 1/7</div>
     <div class="hud-player" id="hud-player"></div>
   </div>
@@ -373,7 +373,7 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
   <div class="intro-container">
     <div class="intro-icon">📚</div>
     <div>
-      <div class="intro-subtitle">디지털 국어사전 탈출 작전 · 7 ROOMS</div>
+      <div class="intro-subtitle">문맥수사대 · 디지털 국어사전 탈출 작전 · 7 ROOMS</div>
       <div class="intro-title glitch" data-text="뜻이 뒤섞인 사전에서 탈출하라">뜻이 뒤섞인 사전에서 탈출하라</div>
     </div>
     <div class="intro-story">
@@ -483,7 +483,7 @@ const ROOMS = [
 // ── ROOM 1: 동형이의어 "배" ─────────────────────────────
 {
   id:'room1', badge:'ROOM 1', title:'과일 창고 — 뒤섞인 문맥',
-  art:'room1', codeDigits:['7','3'], digitIndexes:[0,1],
+  art:'room1', codeDigits:['7'], digitIndexes:[0],
   hint:'황금빛 단어를 클릭해 사전을 열어보세요. 두 문장에서 "배"가 어떻게 다르게 쓰이는지 비교해보세요!',
   text:`탐정은 텁텁한 창고 안에서 일지를 발견했다.<br><br>
 "오늘 선생님께서 직접 심은 <span class="hotword" id="hw-bae1" onclick="openDict('bae','hw-bae1')">배</span> 나무에서 처음으로 열매가 열렸다. 아이들이 나무 아래 앉아 하나씩 나눠 먹었다."<br><br>
@@ -507,13 +507,13 @@ const ROOMS = [
   },
   solveOrder:['hw-bae1','hw-bae2'],
   solvedLog:['과일 [배] 동형이의어 판독 완료','선박 [배] 동형이의어 판독 완료'],
-  codeLog:['암호 조각 #1: 7','암호 조각 #2: 3'],
+  codeLog:['🔑 암호 1번째 자리 획득: 7'],
 },
 
 // ── ROOM 2: 다의어 "먹다" ────────────────────────────────
 {
   id:'room2', badge:'ROOM 2', title:'도서관 지하실 — 뒤틀린 메모들',
-  art:'room2', codeDigits:['5','9'], digitIndexes:[2,3],
+  art:'room2', codeDigits:['3'], digitIndexes:[1],
   hint:'"먹다"는 하나의 단어이지만 상황마다 전혀 다른 의미가 됩니다. 각 문장에서 실제로 무슨 일이 일어나는지 떠올려 보세요.',
   text:`먼지 쌓인 도서관 지하실. 벽에 메모지들이 빼곡히 붙어 있다.<br><br>
 [메모 A] "축구 경기에서 우리 팀이 전반전에만 두 골을 <span class="hotword" id="hw-meok1" onclick="openDict('meok','hw-meok1')">먹었다</span>. 응원단이 탄식했다."<br><br>
@@ -539,13 +539,13 @@ const ROOMS = [
   },
   solveOrder:['hw-meok1','hw-meok2','hw-meok3'],
   solvedLog:['[먹다]② 불리한 상황을 당하다 — 확인','[먹다]③ 나이가 들다 — 확인','[먹다]④ 결심을 품다 — 확인'],
-  codeLog:['암호 조각 #3: 5','암호 조각 #4: 9'],
+  codeLog:['🔑 암호 2번째 자리 획득: 3'],
 },
 
 // ── ROOM 3: 동형이의어 "눈" + 다의어 "차다" ────────────────
 {
-  id:'room3', badge:'ROOM 3', title:'최종 서버실 — 이중 잠금 장치',
-  art:'room3', codeDigits:['2'], digitIndexes:[4],
+  id:'room3', badge:'ROOM 3', title:'서버실 — 이중 잠금 장치',
+  art:'room3', codeDigits:['5'], digitIndexes:[2],
   hint:'이번 방에는 두 단어가 숨어있어요. 먼저 "눈"의 두 가지 의미를, 그 다음 "차다"의 의미를 밝혀야 합니다.',
   text:`서버실 벽에 마지막 메시지가 새겨져 있다.<br><br>
 "겨울 아침, 창밖에 하얀 <span class="hotword" id="hw-nun1" onclick="openDict('nun','hw-nun1')">눈</span>이 소복이 쌓여 있었다. 아이는 창에 이마를 대고 한참 바라보았다."<br><br>
@@ -579,13 +579,13 @@ const ROOMS = [
   },
   solveOrder:['hw-nun1','hw-nun2','hw-cha1'],
   solvedLog:['[눈]② 기상 현상 확인','[눈]① 시각 기관 확인','[차다]② 가득 들어차다 확인'],
-  codeLog:['암호 조각 #5: 2'],
+  codeLog:['🔑 암호 3번째 자리 획득: 5'],
 },
 
 // ── ROOM 4: 다의어 "타다" ────────────────────────────────
 {
   id:'room4', badge:'ROOM 4', title:'기차역 폐허 — 뒤얽힌 행선지',
-  art:'room4', codeDigits:['8'], digitIndexes:[5],
+  art:'room4', codeDigits:['9'], digitIndexes:[3],
   hint:'"타다"는 다의어예요. 불에 타는 것, 교통수단에 오르는 것, 상을 받는 것… 상황을 잘 살펴보세요!',
   text:`폐허가 된 기차역. 낡은 게시판에 종이쪽지들이 붙어 있다.<br><br>
 [게시 1] "소방관들이 서둘러 달려갔지만 이미 지붕이 모두 <span class="hotword" id="hw-ta1" onclick="openDict('ta','hw-ta1')">타</span> 버린 뒤였다. 재만 남았다."<br><br>
@@ -611,13 +611,13 @@ const ROOMS = [
   },
   solveOrder:['hw-ta1','hw-ta2','hw-ta3'],
   solvedLog:['[타다]① 불이 붙어 재가 되다 확인','[타다]② 교통수단에 오르다 확인','[타다]③ 상을 받다 확인'],
-  codeLog:['암호 조각 #6: 8'],
+  codeLog:['🔑 암호 4번째 자리 획득: 9'],
 },
 
 // ── ROOM 5: 동형이의어 "다리" ────────────────────────────
 {
   id:'room5', badge:'ROOM 5', title:'안개 낀 강변 — 잃어버린 연결고리',
-  art:'room5', codeDigits:['4'], digitIndexes:[6],
+  art:'room5', codeDigits:['2'], digitIndexes:[4],
   hint:'"다리"라는 단어, 사람 몸에도 있고 강 위에도 있어요. 동형이의어는 소리만 같을 뿐 완전히 다른 단어랍니다!',
   text:`안개 자욱한 강변. 탐정 노트에 두 개의 문장이 남겨져 있다.<br><br>
 "오랜 등산으로 <span class="hotword" id="hw-dari1" onclick="openDict('dari','hw-dari1')">다리</span>가 너무 아파서 한 걸음도 더 걸을 수 없었다."<br><br>
@@ -639,13 +639,13 @@ const ROOMS = [
   },
   solveOrder:['hw-dari1','hw-dari2'],
   solvedLog:['[다리]① 신체 부위 확인','[다리]② 강 위 구조물 확인'],
-  codeLog:['암호 조각 #7: 4'],
+  codeLog:['🔑 암호 5번째 자리 획득: 2'],
 },
 
 // ── ROOM 6: 다의어 "손" ─────────────────────────────────
 {
   id:'room6', badge:'ROOM 6', title:'비밀 수술실 — 신체 암호 분석',
-  art:'room6', codeDigits:[], digitIndexes:[],
+  art:'room6', codeDigits:['8'], digitIndexes:[5],
   hint:'"손"은 신체 부위인 동시에 다양한 관용적 의미로 쓰이는 다의어예요. 각 문장에서 "손"이 어떤 의미인지 파악해보세요!',
   text:`수술실 칠판에 세 개의 암호문이 적혀 있다.<br><br>
 [암호 A] "이 사건은 이제 경찰의 <span class="hotword" id="hw-son1" onclick="openDict('son','hw-son1')">손</span>을 떠났다. 더 이상 우리가 관여할 수 없다."<br><br>
@@ -671,14 +671,13 @@ const ROOMS = [
   },
   solveOrder:['hw-son1','hw-son2','hw-son3'],
   solvedLog:['[손]② 영향력·처리 능력 확인','[손]③ 일손·노력 확인','[손]④ 솜씨·재주 확인'],
-  codeLog:[],
-  noCode: true,
+  codeLog:['🔑 암호 6번째 자리 획득: 8'],
 },
 
 // ── ROOM 7: 동형이의어 "말" + 다의어 "걸다" (FINAL) ──────
 {
   id:'room7', badge:'ROOM 7', title:'최후의 제어실 — 마지막 봉인 해제',
-  art:'room7', codeDigits:[], digitIndexes:[],
+  art:'room7', codeDigits:['4'], digitIndexes:[6],
   hint:'마지막 방이에요! "말"은 동형이의어, "걸다"는 다의어입니다. 두 단어를 모두 해결해야 사전 세계에서 탈출할 수 있어요!',
   text:`마지막 제어실. 마스터 컴퓨터 화면에 최후의 메시지가 깜빡이고 있다.<br><br>
 "경기장에서 멋진 <span class="hotword" id="hw-mal1" onclick="openDict('mal','hw-mal1')">말</span>이 트랙을 질주하는 모습은 정말 장관이었다."<br><br>
@@ -718,7 +717,7 @@ const ROOMS = [
   },
   solveOrder:['hw-mal1','hw-mal2','hw-geol1','hw-geol2'],
   solvedLog:['[말]② 동물 확인','[말]① 언어 확인','[걸다]① 매달다 확인','[걸다]② 목숨을 바치다 확인'],
-  codeLog:[],
+  codeLog:['🔑 암호 7번째 자리 획득: 4'],
   isFinalRoom:true,
 },
 ];
@@ -1260,25 +1259,23 @@ function checkRoomClear(){
   const room=ROOMS[state.roomIdx];
   if(!room.solveOrder.every(hw=>state.solvedWords[hw]))return;
 
+  // 코드 자리 채우기 (모든 방 공통)
+  room.digitIndexes.forEach((di,i)=>{
+    state.codeDigits[di]=room.codeDigits[i];
+    if(room.codeLog[i])addLog(room.codeLog[i],'success');
+    setTimeout(()=>{playCodeBeep();updateHUD();},i*280);
+  });
+
   if(room.isFinalRoom){
     clearInterval(state.timerInterval);
-    addLog('모든 단어 해독 완료!','success');
-    addLog('탈출 시스템 해제 중...','info');
+    addLog('🎉 모든 단어 해독 완료! 탈출 시스템 해제 중...','success');
     playTransition();
-    setTimeout(showClearScreen,1200);
+    setTimeout(showClearScreen, 1800);
     return;
   }
 
-  if(!room.noCode){
-    room.digitIndexes.forEach((di,i)=>{
-      state.codeDigits[di]=room.codeDigits[i];
-      if(room.codeLog[i])addLog(room.codeLog[i],'success');
-      setTimeout(()=>{playCodeBeep();updateHUD();},i*280);
-    });
-  }
-
   addLog(`${room.badge} 탈출 완료! 다음 방으로 이동...`,'info');
-  setTimeout(()=>showTransition(state.roomIdx+1),800);
+  setTimeout(()=>showTransition(state.roomIdx+1), 900);
 }
 
 // ══════════════════════════════════════════════════════════
