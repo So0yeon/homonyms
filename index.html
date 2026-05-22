@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>디지털 국어사전 탈출 작전</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding:wght@400;700&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
+
+:root {
+  --bg-dark:#0a0c0f; --bg-panel:#0f1318; --bg-card:#141820;
+  --tg:#00ff88; --tgd:#00aa55; --tgg:rgba(0,255,136,.15);
+  --am:#ffb300; --amd:#aa7700; --amg:rgba(255,179,0,.12);
+  --er:#ff3355; --bl:#00aaff;
+  --tp:#e8e0d0; --ts:#8a8070; --td:#4a4440;
+  --bd:rgba(255,179,0,.2); --bdb:rgba(255,179,0,.5);
+  --sc:rgba(0,0,0,.3);
+  --timer-color: var(--tg);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;background:var(--bg-dark);color:var(--tp);font-family:'Nanum Gothic Coding',monospace;overflow:hidden;}
+
+/* CRT */
+body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,transparent 0px,transparent 2px,var(--sc) 2px,var(--sc) 4px);
+  animation:scanmove 8s linear infinite;opacity:.22;}
+@keyframes scanmove{from{background-position:0 0}to{background-position:0 400px}}
+
+/* Glitch */
+.glitch{position:relative;display:inline-block;}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%;}
+.glitch::before{color:var(--er);animation:g1 3s infinite;clip-path:polygon(0 20%,100% 20%,100% 35%,0 35%);}
+.glitch::after{color:var(--bl);animation:g2 3s infinite;clip-path:polygon(0 65%,100% 65%,100% 80%,0 80%);}
+@keyframes g1{0%,90%,100%{transform:translate(0);opacity:0}92%{transform:translate(-3px,1px);opacity:1}94%{transform:translate(3px,-1px);opacity:1}96%{transform:translate(0);opacity:0}}
+@keyframes g2{0%,88%,100%{transform:translate(0);opacity:0}90%{transform:translate(3px,2px);opacity:1}93%{transform:translate(-2px,-1px);opacity:1}95%{transform:translate(0);opacity:0}}
+
+@keyframes blink{50%{opacity:0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes floatIcon{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}}
+@keyframes digitPop{0%{transform:scale(1.4)}60%{transform:scale(.9)}100%{transform:scale(1)}}
+@keyframes logIn{to{opacity:1;transform:translateX(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes particleFly{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
+@keyframes timerPulse{0%,100%{box-shadow:0 0 6px rgba(255,51,85,.4)}50%{box-shadow:0 0 18px rgba(255,51,85,.9)}}
+@keyframes penaltyFlash{0%,100%{background:transparent}20%,60%{background:rgba(255,51,85,.18)}}
+@keyframes penaltyBadge{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(1.2)}}
+@keyframes nameReveal{from{opacity:0;transform:scale(.8) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+/* ── APP ── */
+#app{width:100%;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+
+/* ── HUD ── */
+#hud{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:6px 14px;
+  border-bottom:1px solid var(--bd);background:rgba(15,19,24,.98);backdrop-filter:blur(4px);z-index:100;}
+.hud-left{display:flex;align-items:center;gap:10px;}
+.hud-logo{font-family:'Nanum Myeongjo',serif;font-size:12px;font-weight:800;color:var(--am);
+  text-shadow:0 0 8px var(--amg),0 0 20px var(--amg);letter-spacing:1px;}
+.hud-room{font-size:10px;color:var(--tg);letter-spacing:2px;text-transform:uppercase;}
+.hud-player{font-size:11px;color:var(--ts);letter-spacing:1px;}
+.hud-player span{color:var(--am);font-weight:700;}
+
+.hud-center{display:flex;align-items:center;gap:6px;}
+
+/* TIMER */
+#hud-timer{
+  display:flex;align-items:center;gap:6px;
+  border:1px solid rgba(0,255,136,.3);
+  padding:4px 12px;border-radius:3px;
+  background:rgba(0,255,136,.05);
+  transition:all .5s;
+}
+#hud-timer.warn{border-color:rgba(255,179,0,.6);background:rgba(255,179,0,.08);animation:timerPulse 1s infinite;}
+#hud-timer.danger{border-color:rgba(255,51,85,.6);background:rgba(255,51,85,.08);animation:timerPulse .5s infinite;}
+.timer-icon{font-size:12px;}
+#timer-display{font-size:15px;font-weight:700;font-family:'Nanum Gothic Coding',monospace;color:var(--tg);letter-spacing:1px;min-width:45px;text-align:center;}
+#hud-timer.warn #timer-display{color:var(--am);}
+#hud-timer.danger #timer-display{color:var(--er);}
+.penalty-info{font-size:9px;color:var(--td);letter-spacing:.5px;}
+
+.hud-right{display:flex;align-items:center;gap:12px;}
+.hud-code-box{display:flex;align-items:center;gap:5px;border:1px solid var(--bd);padding:3px 8px;border-radius:3px;background:rgba(255,179,0,.05);}
+.hud-code-label{font-size:9px;color:var(--ts);letter-spacing:1px;}
+.code-digit{width:20px;height:24px;border:1px solid var(--bdb);border-radius:2px;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:var(--am);background:rgba(255,179,0,.08);transition:all .3s;font-family:'Nanum Gothic Coding',monospace;}
+.code-digit.filled{border-color:var(--tg);color:var(--tg);background:rgba(0,255,136,.1);box-shadow:0 0 8px rgba(0,255,136,.3);animation:digitPop .4s ease;}
+.hud-progress{display:flex;gap:4px;align-items:center;flex-wrap:wrap;max-width:80px;}
+.progress-dot{width:7px;height:7px;border-radius:50%;border:1px solid var(--td);background:transparent;transition:all .4s;}
+.progress-dot.done{background:var(--tg);border-color:var(--tg);box-shadow:0 0 6px rgba(0,255,136,.6);}
+.progress-dot.current{background:var(--am);border-color:var(--am);box-shadow:0 0 6px rgba(255,179,0,.6);animation:pulse 1.5s infinite;}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .5s ease;overflow-y:auto;}
+.screen.active{opacity:1;pointer-events:all;}
+
+/* ── INTRO ── */
+#screen-intro{background:var(--bg-dark);padding:16px;}
+.intro-container{max-width:460px;width:100%;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;}
+.intro-icon{font-size:56px;animation:floatIcon 3s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(255,179,0,.5));}
+.intro-title{font-family:'Nanum Myeongjo',serif;font-size:clamp(20px,5vw,28px);font-weight:800;color:var(--am);
+  text-shadow:0 0 20px var(--amg),0 0 40px var(--amg);line-height:1.3;}
+.intro-subtitle{font-size:11px;letter-spacing:3px;color:var(--tg);text-transform:uppercase;text-shadow:0 0 8px rgba(0,255,136,.5);}
+.intro-story{font-family:'Noto Serif KR',serif;font-size:13px;line-height:1.8;color:var(--ts);
+  border:1px solid var(--bd);padding:14px 16px;border-radius:4px;background:rgba(255,179,0,.03);text-align:left;}
+.intro-story strong{color:var(--tp);}
+
+/* 이름 입력 */
+.name-input-section{width:100%;display:flex;flex-direction:column;gap:8px;}
+.name-label{font-size:11px;letter-spacing:2px;color:var(--tg);text-transform:uppercase;}
+.name-input-row{display:flex;gap:8px;align-items:stretch;}
+#player-name-input{
+  flex:1;padding:10px 14px;
+  background:rgba(255,179,0,.04);
+  border:1px solid var(--bdb);
+  border-radius:3px;
+  color:var(--am);
+  font-family:'Nanum Gothic Coding',monospace;
+  font-size:16px;font-weight:700;
+  letter-spacing:2px;
+  outline:none;
+  transition:all .3s;
+}
+#player-name-input::placeholder{color:var(--td);font-size:12px;letter-spacing:1px;font-weight:400;}
+#player-name-input:focus{border-color:var(--tg);background:rgba(0,255,136,.05);box-shadow:0 0 12px rgba(0,255,136,.1);}
+
+.intro-rules{width:100%;text-align:left;display:flex;flex-direction:column;gap:6px;}
+.rule-item{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ts);padding:6px 10px;
+  border-left:2px solid var(--bd);background:rgba(255,255,255,.02);}
+.rule-icon{color:var(--tg);flex-shrink:0;font-size:13px;}
+.rule-item.penalty-rule{border-left-color:rgba(255,51,85,.4);background:rgba(255,51,85,.04);}
+.rule-item.penalty-rule .rule-icon{color:var(--er);}
+
+.btn-start{padding:12px 36px;background:transparent;border:2px solid var(--am);color:var(--am);
+  font-family:'Nanum Gothic Coding',monospace;font-size:15px;font-weight:700;letter-spacing:3px;
+  cursor:pointer;border-radius:3px;position:relative;overflow:hidden;transition:all .3s;text-transform:uppercase;}
+.btn-start::before{content:'';position:absolute;inset:0;background:var(--am);transform:scaleX(0);transform-origin:left;transition:transform .3s ease;z-index:-1;}
+.btn-start:hover::before{transform:scaleX(1);}
+.btn-start:hover{color:var(--bg-dark);}
+.btn-start:disabled{opacity:.4;cursor:not-allowed;}
+.btn-start:disabled::before{display:none;}
+
+/* ── GAME SCREEN ── */
+#screen-game{background:var(--bg-dark);padding:0;flex-direction:row;align-items:stretch;justify-content:flex-start;}
+#scene-panel{flex:1 1 55%;display:flex;flex-direction:column;border-right:1px solid var(--bd);position:relative;overflow:hidden;min-height:0;}
+.scene-header{padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;background:rgba(15,19,24,.9);flex-shrink:0;}
+.scene-room-badge{font-size:9px;letter-spacing:2px;color:var(--am);text-transform:uppercase;border:1px solid var(--bd);padding:2px 6px;border-radius:2px;}
+.scene-title{font-family:'Nanum Myeongjo',serif;font-size:14px;font-weight:700;color:var(--tp);}
+.scene-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;min-height:0;}
+.scene-image{width:100%;border-radius:6px;overflow:hidden;position:relative;border:1px solid var(--bd);background:var(--bg-card);aspect-ratio:16/9;flex-shrink:0;}
+.scene-canvas{width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.scene-text-box{border:1px solid var(--bd);border-radius:4px;background:rgba(20,24,32,.8);padding:12px 14px;
+  font-family:'Noto Serif KR',serif;font-size:14px;line-height:2;color:var(--tp);flex-shrink:0;}
+.scene-text-box p{margin-bottom:4px;}
+.scene-text-box p:last-child{margin-bottom:0;}
+
+.hotword{display:inline-block;color:var(--am);border-bottom:2px solid var(--amd);cursor:pointer;font-weight:700;
+  padding:0 2px;position:relative;transition:all .2s;text-shadow:0 0 8px rgba(255,179,0,.4);}
+.hotword::after{content:'?';position:absolute;top:-8px;right:-6px;font-size:9px;color:var(--tg);
+  animation:blink 1.5s infinite;font-family:'Nanum Gothic Coding',monospace;}
+.hotword:hover{color:#fff;text-shadow:0 0 15px var(--am);border-bottom-color:var(--am);}
+.hotword.solved{color:var(--tg);border-bottom-color:var(--tgd);text-shadow:0 0 8px rgba(0,255,136,.4);}
+.hotword.solved::after{display:none;}
+
+.hint-box{border:1px dashed var(--td);border-radius:4px;padding:8px 12px;font-size:12px;color:var(--td);
+  background:rgba(255,255,255,.01);display:flex;gap:6px;align-items:flex-start;flex-shrink:0;}
+.hint-box .hint-icon{color:var(--tgd);flex-shrink:0;}
+
+/* log panel */
+#log-panel{flex:0 0 250px;display:flex;flex-direction:column;background:var(--bg-panel);min-height:0;}
+.log-header{padding:8px 12px;border-bottom:1px solid var(--bd);font-size:9px;letter-spacing:2px;color:var(--tg);
+  text-transform:uppercase;display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.log-dot{width:5px;height:5px;border-radius:50%;background:var(--tg);animation:pulse 1.5s infinite;}
+#log-list{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:5px;min-height:0;}
+.log-entry{font-size:10px;color:var(--ts);padding:5px 7px;border-left:2px solid var(--td);
+  background:rgba(255,255,255,.01);line-height:1.5;opacity:0;transform:translateX(10px);animation:logIn .3s forwards;}
+.log-entry.success{border-left-color:var(--tg);color:var(--tg);}
+.log-entry.error{border-left-color:var(--er);color:var(--er);}
+.log-entry.info{border-left-color:var(--am);color:var(--am);}
+.log-time{font-size:8px;color:var(--td);margin-right:3px;}
+.memo-section{flex-shrink:0;border-top:1px solid var(--bd);padding:8px;background:rgba(255,255,255,.01);}
+.memo-label{font-size:9px;letter-spacing:1px;color:var(--td);text-transform:uppercase;margin-bottom:5px;}
+#memo-clues{display:flex;flex-direction:column;gap:3px;}
+.clue-chip{display:flex;align-items:center;gap:5px;padding:4px 7px;border-radius:2px;font-size:11px;
+  border:1px solid rgba(0,255,136,.2);background:rgba(0,255,136,.05);color:var(--tg);animation:logIn .4s forwards;}
+.clue-chip .clue-key{font-weight:700;font-size:12px;}
+
+/* ── DICT MODAL ── */
+#dict-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;pointer-events:none;transition:opacity .3s;}
+#dict-overlay.open{opacity:1;pointer-events:all;}
+#dict-modal{width:100%;max-width:500px;background:var(--bg-panel);border:1px solid var(--bdb);border-radius:6px;
+  box-shadow:0 0 40px rgba(255,179,0,.15),0 0 80px rgba(255,179,0,.05);overflow:hidden;
+  transform:scale(.9) translateY(20px);transition:transform .3s ease;max-height:90vh;display:flex;flex-direction:column;}
+#dict-overlay.open #dict-modal{transform:scale(1) translateY(0);}
+.dict-titlebar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;
+  border-bottom:1px solid var(--bd);background:rgba(255,179,0,.05);flex-shrink:0;}
+.dict-titlebar-left{display:flex;align-items:center;gap:6px;}
+.dict-logo-text{font-family:'Nanum Myeongjo',serif;font-size:11px;font-weight:700;color:var(--am);letter-spacing:1px;}
+.dict-version{font-size:8px;color:var(--td);}
+.dict-close-btn{width:20px;height:20px;border-radius:50%;border:1px solid var(--bd);background:transparent;
+  color:var(--ts);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.dict-close-btn:hover{border-color:var(--er);color:var(--er);}
+.dict-search-bar{padding:8px 12px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.02);flex-shrink:0;}
+.dict-keyword{font-family:'Nanum Myeongjo',serif;font-size:18px;font-weight:700;color:var(--am);
+  letter-spacing:2px;text-shadow:0 0 10px rgba(255,179,0,.3);flex:1;}
+.dict-type-badge{font-size:9px;padding:2px 7px;border-radius:2px;letter-spacing:1px;font-weight:700;text-transform:uppercase;}
+.badge-polysemy{background:rgba(0,170,255,.15);color:var(--bl);border:1px solid rgba(0,170,255,.3);}
+.badge-homonym{background:rgba(255,51,85,.12);color:var(--er);border:1px solid rgba(255,51,85,.3);}
+.dict-body{overflow-y:auto;flex:1;}
+.dict-context-box{margin:10px 12px;padding:10px 12px;border:1px solid var(--bd);border-radius:4px;background:rgba(255,179,0,.03);}
+.dict-context-label{font-size:8px;letter-spacing:2px;color:var(--am);text-transform:uppercase;margin-bottom:5px;}
+.dict-context-text{font-family:'Noto Serif KR',serif;font-size:12px;line-height:1.8;color:var(--ts);}
+.dict-context-text .highlight-word{color:var(--am);font-weight:700;text-shadow:0 0 8px rgba(255,179,0,.4);}
+.dict-entries-label{padding:0 12px 5px;font-size:9px;letter-spacing:2px;color:var(--td);text-transform:uppercase;}
+.dict-entry{margin:0 10px 7px;border:1px solid var(--bd);border-radius:4px;overflow:hidden;background:var(--bg-card);
+  cursor:pointer;transition:all .25s;position:relative;}
+.dict-entry:hover{border-color:var(--am);transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,179,0,.1);}
+.dict-entry.selected-wrong{border-color:var(--er)!important;animation:shake .4s ease;}
+.dict-entry.selected-right{border-color:var(--tg)!important;background:rgba(0,255,136,.06);}
+.entry-header{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);}
+.entry-num{width:18px;height:18px;border-radius:50%;border:1px solid var(--bd);display:flex;align-items:center;
+  justify-content:center;font-size:9px;color:var(--td);font-weight:700;flex-shrink:0;}
+.entry-pos{font-size:9px;color:var(--tgd);letter-spacing:1px;text-transform:uppercase;}
+.entry-meaning{padding:7px 10px 8px;font-family:'Noto Serif KR',serif;font-size:12px;line-height:1.7;color:var(--tp);}
+.entry-example{padding:5px 10px 8px;font-size:11px;color:var(--ts);font-style:italic;font-family:'Noto Serif KR',serif;
+  border-top:1px solid rgba(255,255,255,.03);background:rgba(0,0,0,.2);}
+.entry-example::before{content:'예) ';color:var(--td);}
+.dict-feedback{margin:0 10px 8px;padding:8px 10px;border-radius:4px;font-size:11px;line-height:1.6;display:none;}
+.dict-feedback.show-error{display:block;background:rgba(255,51,85,.08);border:1px solid rgba(255,51,85,.3);color:var(--er);}
+.dict-feedback.show-ok{display:block;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);color:var(--tg);}
+
+/* ── TRANSITION ── */
+#transition-overlay{position:fixed;inset:0;z-index:800;background:var(--bg-dark);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;opacity:0;pointer-events:none;transition:opacity .5s;}
+#transition-overlay.active{opacity:1;pointer-events:all;}
+.transition-text{font-size:12px;color:var(--tg);letter-spacing:4px;text-transform:uppercase;text-shadow:0 0 10px rgba(0,255,136,.5);}
+.transition-bar{width:180px;height:2px;background:rgba(255,255,255,.05);border-radius:1px;overflow:hidden;}
+.transition-fill{height:100%;width:0;background:var(--tg);box-shadow:0 0 10px rgba(0,255,136,.8);transition:width 1.2s ease;}
+.transition-code{font-size:26px;font-weight:700;color:var(--am);letter-spacing:6px;font-family:'Nanum Gothic Coding',monospace;
+  text-shadow:0 0 20px rgba(255,179,0,.6);display:none;}
+
+/* ── PENALTY OVERLAY ── */
+#penalty-overlay{position:fixed;inset:0;z-index:600;pointer-events:none;animation:penaltyFlash .6s ease;}
+.penalty-badge{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:601;pointer-events:none;
+  font-size:32px;font-weight:800;color:var(--er);font-family:'Nanum Gothic Coding',monospace;
+  text-shadow:0 0 20px rgba(255,51,85,.8);letter-spacing:2px;
+  animation:penaltyBadge .9s ease forwards;}
+
+/* ── TIMEOUT SCREEN ── */
+#screen-timeout{background:var(--bg-dark);padding:20px;}
+.timeout-container{max-width:420px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px;}
+.timeout-icon{font-size:64px;filter:drop-shadow(0 0 20px rgba(255,51,85,.6));}
+.timeout-title{font-family:'Nanum Myeongjo',serif;font-size:clamp(22px,5vw,32px);font-weight:800;color:var(--er);
+  text-shadow:0 0 20px rgba(255,51,85,.5);}
+.timeout-msg{font-family:'Noto Serif KR',serif;font-size:14px;line-height:1.9;color:var(--ts);
+  border:1px solid rgba(255,51,85,.2);padding:14px 18px;border-radius:4px;background:rgba(255,51,85,.03);text-align:left;}
+.timeout-stat{font-size:13px;color:var(--ts);display:flex;flex-direction:column;gap:6px;width:100%;}
+.timeout-stat-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bd);}
+.timeout-stat-row .stat-label{color:var(--td);}
+.timeout-stat-row .stat-value{color:var(--tp);font-weight:700;}
+
+/* ── CLEAR SCREEN ── */
+#screen-clear{background:var(--bg-dark);padding:20px;}
+.clear-container{max-width:480px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px;}
+.clear-icon{font-size:64px;animation:floatIcon 3s ease-in-out infinite;}
+.clear-title{font-family:'Nanum Myeongjo',serif;font-size:clamp(22px,5vw,32px);font-weight:800;color:var(--tg);
+  text-shadow:0 0 20px rgba(0,255,136,.5);}
+.clear-player-name{font-size:clamp(18px,4vw,26px);font-family:'Nanum Myeongjo',serif;font-weight:800;
+  color:var(--am);text-shadow:0 0 16px rgba(255,179,0,.6);letter-spacing:2px;
+  animation:nameReveal .6s .3s ease backwards;}
+.clear-subtitle{font-size:12px;color:var(--ts);letter-spacing:1px;}
+.clear-stats{width:100%;display:flex;flex-direction:column;gap:0;border:1px solid var(--bd);border-radius:4px;overflow:hidden;background:rgba(255,255,255,.02);}
+.clear-stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd);}
+.clear-stat-row:last-child{border-bottom:none;}
+.clear-stat-label{font-size:11px;color:var(--ts);letter-spacing:1px;}
+.clear-stat-value{font-size:14px;font-weight:700;font-family:'Nanum Gothic Coding',monospace;color:var(--tp);}
+.clear-stat-value.gold{color:var(--am);text-shadow:0 0 8px rgba(255,179,0,.4);}
+.clear-stat-value.green{color:var(--tg);}
+.clear-stat-value.red{color:var(--er);}
+.clear-msg{font-family:'Noto Serif KR',serif;font-size:13px;line-height:1.9;color:var(--ts);
+  border:1px solid var(--bd);padding:14px 18px;border-radius:4px;background:rgba(255,255,255,.02);text-align:left;}
+.btn-restart{padding:11px 28px;background:transparent;border:2px solid var(--tg);color:var(--tg);
+  font-family:'Nanum Gothic Coding',monospace;font-size:13px;font-weight:700;letter-spacing:2px;
+  cursor:pointer;border-radius:3px;transition:all .3s;text-transform:uppercase;}
+.btn-restart:hover{background:var(--tg);color:var(--bg-dark);}
+
+/* particle */
+.particle{position:absolute;width:2px;height:2px;border-radius:50%;background:var(--am);pointer-events:none;animation:particleFly 1s ease-out forwards;}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,179,0,.2);border-radius:2px;}
+
+/* mobile */
+@media(max-width:680px){
+  #screen-game{flex-direction:column;}
+  #scene-panel{flex:1 1 auto;border-right:none;border-bottom:1px solid var(--bd);}
+  #log-panel{flex:0 0 160px;flex-direction:row;}
+  .log-header{writing-mode:vertical-lr;padding:12px 7px;}
+  #log-list{flex:1;}
+  .memo-section{flex:0 0 110px;border-top:none;border-left:1px solid var(--bd);}
+  .hud-code-label{display:none;}
+  .hud-player{display:none;}
+  #hud-timer{padding:3px 8px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-left">
+    <div class="hud-logo glitch" data-text="국어사전 v2.4">국어사전 v2.4</div>
+    <div class="hud-room" id="hud-room-text">ROOM 1/7</div>
+    <div class="hud-player" id="hud-player"></div>
+  </div>
+  <div class="hud-center">
+    <div id="hud-timer">
+      <span class="timer-icon">⏱</span>
+      <span id="timer-display">10:00</span>
+      <span class="penalty-info">오답:-10초</span>
+    </div>
+  </div>
+  <div class="hud-right">
+    <div class="hud-code-box">
+      <span class="hud-code-label">CODE</span>
+      <div class="code-digit" id="digit-0">_</div>
+      <div class="code-digit" id="digit-1">_</div>
+      <div class="code-digit" id="digit-2">_</div>
+      <div class="code-digit" id="digit-3">_</div>
+      <div class="code-digit" id="digit-4">_</div>
+      <div class="code-digit" id="digit-5">_</div>
+      <div class="code-digit" id="digit-6">_</div>
+    </div>
+    <div class="hud-progress" id="hud-progress"></div>
+  </div>
+</div>
+
+<!-- 인트로 -->
+<div class="screen active" id="screen-intro">
+  <div class="intro-container">
+    <div class="intro-icon">📚</div>
+    <div>
+      <div class="intro-subtitle">디지털 국어사전 탈출 작전 · 7 ROOMS</div>
+      <div class="intro-title glitch" data-text="뜻이 뒤섞인 사전에서 탈출하라">뜻이 뒤섞인 사전에서 탈출하라</div>
+    </div>
+    <div class="intro-story">
+      <strong>⚠ 긴급 경보:</strong> 디지털 국어사전 서버에 바이러스가 침투했습니다.<br>
+      단어들의 뜻이 모두 <strong>뒤섞여버렸고</strong>, 당신은 사전 속 7개의 방에 갇혔습니다.<br>
+      각 방의 문장을 읽고 <strong>문맥에 맞는 올바른 뜻</strong>을 찾아야 탈출 코드를 얻을 수 있습니다.
+    </div>
+    <div class="name-input-section">
+      <div class="name-label">🔐 탐정 식별 코드 입력 (이름)</div>
+      <div class="name-input-row">
+        <input type="text" id="player-name-input" placeholder="이름을 입력하세요" maxlength="8" autocomplete="off"/>
+      </div>
+    </div>
+    <div class="intro-rules">
+      <div class="rule-item"><span class="rule-icon">🔶</span> 황색 단어를 클릭 → 국어사전 열림 → 문맥에 맞는 뜻 선택</div>
+      <div class="rule-item"><span class="rule-icon">🔑</span> 정답 시 암호 조각 획득 → 7자리 코드 완성 = 탈출!</div>
+      <div class="rule-item"><span class="rule-icon">⏱</span> 제한 시간 <strong style="color:var(--am)">10분</strong>. 시간이 초과되면 실패입니다.</div>
+      <div class="rule-item penalty-rule"><span class="rule-icon">💀</span> 오답 선택 시 <strong style="color:var(--er)">10초 감점</strong> 패널티!</div>
+    </div>
+    <button class="btn-start" id="btn-start-game" onclick="startGame()" disabled>▶ 접속 시작</button>
+  </div>
+</div>
+
+<!-- 게임 -->
+<div class="screen" id="screen-game">
+  <div id="scene-panel">
+    <div class="scene-header">
+      <span class="scene-room-badge" id="scene-room-badge">ROOM 1</span>
+      <span class="scene-title" id="scene-title">−</span>
+    </div>
+    <div class="scene-body" id="scene-body"></div>
+  </div>
+  <div id="log-panel">
+    <div class="log-header"><div class="log-dot"></div>SYSTEM LOG</div>
+    <div id="log-list"></div>
+    <div class="memo-section">
+      <div class="memo-label">수집 단서</div>
+      <div id="memo-clues"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 시간 초과 -->
+<div class="screen" id="screen-timeout">
+  <div class="timeout-container">
+    <div class="timeout-icon">💀</div>
+    <div class="timeout-title glitch" data-text="탈출 실패">탈출 실패</div>
+    <div class="timeout-msg" id="timeout-msg"></div>
+    <div class="timeout-stat" id="timeout-stat"></div>
+    <button class="btn-restart" onclick="restartGame()">↺ 다시 도전</button>
+  </div>
+</div>
+
+<!-- 클리어 -->
+<div class="screen" id="screen-clear">
+  <div class="clear-container">
+    <div class="clear-icon">🎉</div>
+    <div class="clear-title glitch" data-text="탈출 성공!">탈출 성공!</div>
+    <div class="clear-subtitle">국어 탐정의 임무 완수</div>
+    <div class="clear-player-name" id="clear-player-name"></div>
+    <div class="clear-stats" id="clear-stats"></div>
+    <div class="clear-msg">
+      사전 세계의 바이러스가 완전히 제거되었습니다! 🌟<br><br>
+      <strong>오늘 배운 것:</strong><br>
+      • <strong>다의어</strong> — 하나의 단어가 여러 뜻 (문맥으로 구별!)<br>
+      • <strong>동형이의어</strong> — 소리는 같지만 전혀 다른 단어 (뜻의 역사가 다름!)<br><br>
+      7개의 방을 모두 탈출한 당신, 진정한 국어 탐정입니다!
+    </div>
+    <button class="btn-restart" onclick="restartGame()">↺ 다시 도전</button>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<!-- 국어사전 모달 -->
+<div id="dict-overlay" onclick="closeDictIfOutside(event)">
+  <div id="dict-modal">
+    <div class="dict-titlebar">
+      <div class="dict-titlebar-left">
+        <span>📖</span><span class="dict-logo-text">디지털 표준국어대사전</span>
+        <span class="dict-version">ERROR_BUILD_2.4.1</span>
+      </div>
+      <button class="dict-close-btn" onclick="closeDict()">✕</button>
+    </div>
+    <div class="dict-search-bar">
+      <span style="color:var(--td);font-size:12px;">🔎</span>
+      <span class="dict-keyword" id="dict-keyword">−</span>
+      <span class="dict-type-badge" id="dict-type-badge">−</span>
+    </div>
+    <div class="dict-body" id="dict-body"></div>
+  </div>
+</div>
+
+<!-- 방 전환 -->
+<div id="transition-overlay">
+  <div class="transition-text" id="trans-msg">암호 해독 중...</div>
+  <div class="transition-bar"><div class="transition-fill" id="trans-fill"></div></div>
+  <div class="transition-code" id="trans-code">???????</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  GAME DATA — 7 ROOMS
+// ══════════════════════════════════════════════════════════
+const ROOMS = [
+
+// ── ROOM 1: 동형이의어 "배" ─────────────────────────────
+{
+  id:'room1', badge:'ROOM 1', title:'과일 창고 — 뒤섞인 문맥',
+  art:'room1', codeDigits:['7','3'], digitIndexes:[0,1],
+  hint:'황금빛 단어를 클릭해 사전을 열어보세요. 두 문장에서 "배"가 어떻게 다르게 쓰이는지 비교해보세요!',
+  text:`탐정은 텁텁한 창고 안에서 일지를 발견했다.<br><br>
+"오늘 선생님께서 직접 심은 <span class="hotword" id="hw-bae1" onclick="openDict('bae','hw-bae1')">배</span> 나무에서 처음으로 열매가 열렸다. 아이들이 나무 아래 앉아 하나씩 나눠 먹었다."<br><br>
+일지를 넘기니 다른 페이지가 나왔다.<br><br>
+"항구에서 <span class="hotword" id="hw-bae2" onclick="openDict('bae','hw-bae2')">배</span>가 떠나는 것을 지켜보았다. 멀어지는 불빛이 한참 동안 바다 위에 남아 있었다."`,
+  words:{
+    bae:{
+      keyword:'배', type:'homonym', typeBadge:'동형이의어',
+      entries:[
+        {num:1,pos:'명사',meaning:'사람의 몸통에서 위장이 있는 앞부분.',example:'배가 고파서 밥을 먹었다.'},
+        {num:2,pos:'명사',meaning:'배나무의 열매. 둥글고 달콤한 과일.',example:'가을이 되면 배가 익는다.'},
+        {num:3,pos:'명사',meaning:'물 위를 다니는 교통수단. 선박.',example:'큰 배가 항구에 정박했다.'},
+      ],
+      answers:{'hw-bae1':1,'hw-bae2':2},
+      feedbacks:{wrong:'🔴 문장 상황을 다시 살펴보세요. 무엇이 열렸나요?',right:'✅ 정확합니다! 동형이의어를 구별했어요!'},
+      contextFor:{
+        'hw-bae1':'"직접 심은 ___ 나무에서 열매가 열렸다" — 어떤 나무일까요?',
+        'hw-bae2':'"항구에서 ___가 떠나는 것을 지켜보았다" — 항구를 떠나는 것은?',
+      },
+    }
+  },
+  solveOrder:['hw-bae1','hw-bae2'],
+  solvedLog:['과일 [배] 동형이의어 판독 완료','선박 [배] 동형이의어 판독 완료'],
+  codeLog:['암호 조각 #1: 7','암호 조각 #2: 3'],
+},
+
+// ── ROOM 2: 다의어 "먹다" ────────────────────────────────
+{
+  id:'room2', badge:'ROOM 2', title:'도서관 지하실 — 뒤틀린 메모들',
+  art:'room2', codeDigits:['5','9'], digitIndexes:[2,3],
+  hint:'"먹다"는 하나의 단어이지만 상황마다 전혀 다른 의미가 됩니다. 각 문장에서 실제로 무슨 일이 일어나는지 떠올려 보세요.',
+  text:`먼지 쌓인 도서관 지하실. 벽에 메모지들이 빼곡히 붙어 있다.<br><br>
+[메모 A] "축구 경기에서 우리 팀이 전반전에만 두 골을 <span class="hotword" id="hw-meok1" onclick="openDict('meok','hw-meok1')">먹었다</span>. 응원단이 탄식했다."<br><br>
+[메모 B] "올해 할머니께서 칠순을 <span class="hotword" id="hw-meok2" onclick="openDict('meok','hw-meok2')">드셨다</span>고 들었다. 가족들이 큰 잔치를 열었다."<br><br>
+[메모 C] "그는 이번 사건을 끝까지 밝히기로 <span class="hotword" id="hw-meok3" onclick="openDict('meok','hw-meok3')">마음을 먹었다</span>. 눈빛이 단단해졌다."`,
+  words:{
+    meok:{
+      keyword:'먹다', type:'polysemy', typeBadge:'다의어',
+      entries:[
+        {num:1,pos:'동사',meaning:'음식 등을 입을 통해 배 속으로 들여보내다.',example:'밥을 먹었다.'},
+        {num:2,pos:'동사',meaning:'점수·손해 등 불리한 상황을 당하거나 입다.',example:'상대방에게 골을 먹었다.'},
+        {num:3,pos:'동사',meaning:'나이가 들거나 해를 더하다.',example:'올해 또 한 살 먹었다.'},
+        {num:4,pos:'동사',meaning:'어떤 마음이나 결심을 품다.',example:'큰 꿈을 먹고 출발했다.'},
+      ],
+      answers:{'hw-meok1':1,'hw-meok2':2,'hw-meok3':3},
+      feedbacks:{wrong:'🔴 틀렸어요. 그 상황에서 실제로 무슨 일이 생긴 건지 생각해보세요.',right:'✅ 다의어의 정확한 의미를 찾았어요!'},
+      contextFor:{
+        'hw-meok1':'"두 골을 먹었다" — 골을 진짜로 삼킨 건 아니잖아요?',
+        'hw-meok2':'"칠순을 드셨다" — 칠순(70세)이란 무엇일까요?',
+        'hw-meok3':'"마음을 먹었다" — 마음을 먹는다는 게 정말 삼키는 걸까요?',
+      },
+    }
+  },
+  solveOrder:['hw-meok1','hw-meok2','hw-meok3'],
+  solvedLog:['[먹다]② 불리한 상황을 당하다 — 확인','[먹다]③ 나이가 들다 — 확인','[먹다]④ 결심을 품다 — 확인'],
+  codeLog:['암호 조각 #3: 5','암호 조각 #4: 9'],
+},
+
+// ── ROOM 3: 동형이의어 "눈" + 다의어 "차다" ────────────────
+{
+  id:'room3', badge:'ROOM 3', title:'최종 서버실 — 이중 잠금 장치',
+  art:'room3', codeDigits:['2'], digitIndexes:[4],
+  hint:'이번 방에는 두 단어가 숨어있어요. 먼저 "눈"의 두 가지 의미를, 그 다음 "차다"의 의미를 밝혀야 합니다.',
+  text:`서버실 벽에 마지막 메시지가 새겨져 있다.<br><br>
+"겨울 아침, 창밖에 하얀 <span class="hotword" id="hw-nun1" onclick="openDict('nun','hw-nun1')">눈</span>이 소복이 쌓여 있었다. 아이는 창에 이마를 대고 한참 바라보았다."<br><br>
+"선생님의 <span class="hotword" id="hw-nun2" onclick="openDict('nun','hw-nun2')">눈</span>이 교실 뒤편을 향했다. 조용히 떠들던 학생들이 얼어붙었다."<br><br>
+"이 버스는 이미 승객으로 <span class="hotword" id="hw-cha1" onclick="openDict('cha','hw-cha1')">차</span> 있어서 더 탈 수가 없었다."`,
+  words:{
+    nun:{
+      keyword:'눈', type:'homonym', typeBadge:'동형이의어',
+      entries:[
+        {num:1,pos:'명사',meaning:'사람이나 동물의 시각 기관. 사물을 보는 신체 부위.',example:'눈을 크게 뜨고 바라봤다.'},
+        {num:2,pos:'명사',meaning:'대기 중 수증기가 얼어 결정이 되어 내리는 것.',example:'첫눈이 펑펑 내렸다.'},
+      ],
+      answers:{'hw-nun1':1,'hw-nun2':0},
+      feedbacks:{wrong:'🔴 이 단어는 소리는 같지만 완전히 다른 단어예요!',right:'✅ 동형이의어 구별 성공!'},
+      contextFor:{
+        'hw-nun1':'"창밖에 하얀 ___이 쌓여있다" — 겨울에 창밖에 쌓이는 흰 것은?',
+        'hw-nun2':'"선생님의 ___이 향했다" — 선생님이 무엇으로 보셨을까요?',
+      },
+    },
+    cha:{
+      keyword:'차다', type:'polysemy', typeBadge:'다의어',
+      entries:[
+        {num:1,pos:'동사',meaning:'발로 힘차게 때리거나 치다.',example:'공을 힘껏 찼다.'},
+        {num:2,pos:'동사',meaning:'일정한 공간에 가득 들어차다.',example:'관중석이 사람들로 찼다.'},
+        {num:3,pos:'형용사',meaning:'온도가 낮아 냉기가 느껴지다.',example:'겨울 바람이 차다.'},
+      ],
+      answers:{'hw-cha1':1},
+      feedbacks:{wrong:'🔴 버스 안의 상태를 생각해보세요.',right:'✅ "차다"의 정확한 뜻을 찾았어요!'},
+      contextFor:{'hw-cha1':'"버스는 이미 승객으로 ___ 있어서" — 버스 안이 어떤 상태인가요?'},
+    }
+  },
+  solveOrder:['hw-nun1','hw-nun2','hw-cha1'],
+  solvedLog:['[눈]② 기상 현상 확인','[눈]① 시각 기관 확인','[차다]② 가득 들어차다 확인'],
+  codeLog:['암호 조각 #5: 2'],
+},
+
+// ── ROOM 4: 다의어 "타다" ────────────────────────────────
+{
+  id:'room4', badge:'ROOM 4', title:'기차역 폐허 — 뒤얽힌 행선지',
+  art:'room4', codeDigits:['8'], digitIndexes:[5],
+  hint:'"타다"는 다의어예요. 불에 타는 것, 교통수단에 오르는 것, 상을 받는 것… 상황을 잘 살펴보세요!',
+  text:`폐허가 된 기차역. 낡은 게시판에 종이쪽지들이 붙어 있다.<br><br>
+[게시 1] "소방관들이 서둘러 달려갔지만 이미 지붕이 모두 <span class="hotword" id="hw-ta1" onclick="openDict('ta','hw-ta1')">타</span> 버린 뒤였다. 재만 남았다."<br><br>
+[게시 2] "드디어 기차를 <span class="hotword" id="hw-ta2" onclick="openDict('ta','hw-ta2')">타고</span> 할머니 댁을 향해 출발했다. 창밖 풍경이 빠르게 스쳐갔다."<br><br>
+[게시 3] "이번 대회에서 금상을 <span class="hotword" id="hw-ta3" onclick="openDict('ta','hw-ta3')">탄</span> 학생은 전교에서 단 한 명이었다."`,
+  words:{
+    ta:{
+      keyword:'타다', type:'polysemy', typeBadge:'다의어',
+      entries:[
+        {num:1,pos:'동사',meaning:'불이 붙어 불꽃이 일거나 재가 되다.',example:'모닥불이 활활 탔다.'},
+        {num:2,pos:'동사',meaning:'교통수단이나 동물의 등 위에 오르다.',example:'버스를 타고 학교에 갔다.'},
+        {num:3,pos:'동사',meaning:'시상이나 배당으로 무언가를 받다.',example:'일등상을 탔다.'},
+        {num:4,pos:'동사',meaning:'피부에 햇볕을 받아 검어지다.',example:'여름에 피부가 탔다.'},
+      ],
+      answers:{'hw-ta1':0,'hw-ta2':1,'hw-ta3':2},
+      feedbacks:{wrong:'🔴 상황을 다시 읽어보세요. 어떤 일이 벌어진 건가요?',right:'✅ 다의어 "타다"의 정확한 의미를 찾았어요!'},
+      contextFor:{
+        'hw-ta1':'"지붕이 모두 ___ 버린 뒤였다. 재만 남았다" — 무슨 일이 있었나요?',
+        'hw-ta2':'"기차를 ___고 할머니 댁을 향해 출발했다" — 기차에 어떻게 했나요?',
+        'hw-ta3':'"금상을 ___ 학생은 단 한 명이었다" — 금상을 어떻게 했나요?',
+      },
+    }
+  },
+  solveOrder:['hw-ta1','hw-ta2','hw-ta3'],
+  solvedLog:['[타다]① 불이 붙어 재가 되다 확인','[타다]② 교통수단에 오르다 확인','[타다]③ 상을 받다 확인'],
+  codeLog:['암호 조각 #6: 8'],
+},
+
+// ── ROOM 5: 동형이의어 "다리" ────────────────────────────
+{
+  id:'room5', badge:'ROOM 5', title:'안개 낀 강변 — 잃어버린 연결고리',
+  art:'room5', codeDigits:['4'], digitIndexes:[6],
+  hint:'"다리"라는 단어, 사람 몸에도 있고 강 위에도 있어요. 동형이의어는 소리만 같을 뿐 완전히 다른 단어랍니다!',
+  text:`안개 자욱한 강변. 탐정 노트에 두 개의 문장이 남겨져 있다.<br><br>
+"오랜 등산으로 <span class="hotword" id="hw-dari1" onclick="openDict('dari','hw-dari1')">다리</span>가 너무 아파서 한 걸음도 더 걸을 수 없었다."<br><br>
+"홍수로 강 위의 <span class="hotword" id="hw-dari2" onclick="openDict('dari','hw-dari2')">다리</span>가 무너졌다는 소식에 마을 사람들이 모두 놀랐다."`,
+  words:{
+    dari:{
+      keyword:'다리', type:'homonym', typeBadge:'동형이의어',
+      entries:[
+        {num:1,pos:'명사',meaning:'사람이나 동물의 몸통 아래 붙어 걷거나 뛰는 데 쓰는 신체 부위.',example:'오래 서 있었더니 다리가 저렸다.'},
+        {num:2,pos:'명사',meaning:'강이나 계곡 위에 건너다닐 수 있게 만든 구조물.',example:'강 위에 새 다리가 놓였다.'},
+      ],
+      answers:{'hw-dari1':0,'hw-dari2':1},
+      feedbacks:{wrong:'🔴 동형이의어예요! 각 문장의 상황을 다시 생각해보세요.',right:'✅ 동형이의어 "다리"를 완벽히 구별했어요!'},
+      contextFor:{
+        'hw-dari1':'"등산으로 ___가 아파서 걸을 수 없었다" — 걷는 데 쓰는 것은?',
+        'hw-dari2':'"강 위의 ___가 무너졌다" — 강 위에 세우는 것은?',
+      },
+    }
+  },
+  solveOrder:['hw-dari1','hw-dari2'],
+  solvedLog:['[다리]① 신체 부위 확인','[다리]② 강 위 구조물 확인'],
+  codeLog:['암호 조각 #7: 4'],
+},
+
+// ── ROOM 6: 다의어 "손" ─────────────────────────────────
+{
+  id:'room6', badge:'ROOM 6', title:'비밀 수술실 — 신체 암호 분석',
+  art:'room6', codeDigits:[], digitIndexes:[],
+  hint:'"손"은 신체 부위인 동시에 다양한 관용적 의미로 쓰이는 다의어예요. 각 문장에서 "손"이 어떤 의미인지 파악해보세요!',
+  text:`수술실 칠판에 세 개의 암호문이 적혀 있다.<br><br>
+[암호 A] "이 사건은 이제 경찰의 <span class="hotword" id="hw-son1" onclick="openDict('son','hw-son1')">손</span>을 떠났다. 더 이상 우리가 관여할 수 없다."<br><br>
+[암호 B] "그 일은 사람 <span class="hotword" id="hw-son2" onclick="openDict('son','hw-son2')">손</span>이 많이 가는 작업이라 혼자서는 어렵다."<br><br>
+[암호 C] "저는 요리에 <span class="hotword" id="hw-son3" onclick="openDict('son','hw-son3')">손</span>이 없어서 매번 실패해요."`,
+  words:{
+    son:{
+      keyword:'손', type:'polysemy', typeBadge:'다의어',
+      entries:[
+        {num:1,pos:'명사',meaning:'사람의 팔목 아래 부분. 물건을 잡거나 일을 하는 신체 기관.',example:'손을 씻고 밥을 먹었다.'},
+        {num:2,pos:'명사',meaning:'어떤 일을 처리하는 사람의 힘이나 능력. 또는 그 영향력.',example:'그 일은 이미 내 손을 벗어났다.'},
+        {num:3,pos:'명사',meaning:'일손. 일하는 데 드는 노력이나 수고.',example:'농번기에는 손이 부족하다.'},
+        {num:4,pos:'명사',meaning:'어떤 일을 능숙하게 처리하는 재주나 솜씨.',example:'우리 엄마는 손이 커서 음식이 항상 맛있다.'},
+      ],
+      answers:{'hw-son1':1,'hw-son2':2,'hw-son3':3},
+      feedbacks:{wrong:'🔴 "손"의 여러 의미 중 이 문장에 맞는 걸 골라야 해요!',right:'✅ "손"의 다의어적 의미를 정확히 찾았어요!'},
+      contextFor:{
+        'hw-son1':'"경찰의 ___을 떠났다" — 경찰이 더 이상 관여 못 한다면?',
+        'hw-son2':'"사람 ___이 많이 가는 작업" — 많이 필요한 것은 노동력?',
+        'hw-son3':'"요리에 ___이 없어서" — 잘 못한다는 말은 무슨 뜻?',
+      },
+    }
+  },
+  solveOrder:['hw-son1','hw-son2','hw-son3'],
+  solvedLog:['[손]② 영향력·처리 능력 확인','[손]③ 일손·노력 확인','[손]④ 솜씨·재주 확인'],
+  codeLog:[],
+  noCode: true,
+},
+
+// ── ROOM 7: 동형이의어 "말" + 다의어 "걸다" (FINAL) ──────
+{
+  id:'room7', badge:'ROOM 7', title:'최후의 제어실 — 마지막 봉인 해제',
+  art:'room7', codeDigits:[], digitIndexes:[],
+  hint:'마지막 방이에요! "말"은 동형이의어, "걸다"는 다의어입니다. 두 단어를 모두 해결해야 사전 세계에서 탈출할 수 있어요!',
+  text:`마지막 제어실. 마스터 컴퓨터 화면에 최후의 메시지가 깜빡이고 있다.<br><br>
+"경기장에서 멋진 <span class="hotword" id="hw-mal1" onclick="openDict('mal','hw-mal1')">말</span>이 트랙을 질주하는 모습은 정말 장관이었다."<br><br>
+"선생님의 따뜻한 <span class="hotword" id="hw-mal2" onclick="openDict('mal','hw-mal2')">말</span>이 오랫동안 마음속에 남았다. 큰 위로가 되었다."<br><br>
+"어머니가 벽에 아름다운 그림을 <span class="hotword" id="hw-geol1" onclick="openDict('geol','hw-geol1')">걸었다</span>. 방 분위기가 훨씬 밝아졌다."<br><br>
+"경찰은 이 사건에 목숨을 <span class="hotword" id="hw-geol2" onclick="openDict('geol','hw-geol2')">걸고</span> 수사하겠다고 선언했다."`,
+  words:{
+    mal:{
+      keyword:'말', type:'homonym', typeBadge:'동형이의어',
+      entries:[
+        {num:1,pos:'명사',meaning:'사람의 생각이나 느낌을 표현하는 음성 언어.',example:'그의 말이 너무 재미있었다.'},
+        {num:2,pos:'명사',meaning:'갈기가 있고 빠르게 달리는 동물. 승마나 경주에 이용.',example:'말이 힘차게 달렸다.'},
+        {num:3,pos:'명사',meaning:'장기에서 쓰이는 놀이 도구.',example:'장기말을 움직였다.'},
+      ],
+      answers:{'hw-mal1':1,'hw-mal2':0},
+      feedbacks:{wrong:'🔴 동형이의어예요! 문장에서 무엇이 등장하는지 잘 보세요.',right:'✅ 동형이의어 "말"을 완벽하게 구별했어요!'},
+      contextFor:{
+        'hw-mal1':'"경기장에서 ___ 이 트랙을 질주했다" — 경기장 트랙을 달리는 것은?',
+        'hw-mal2':'"선생님의 따뜻한 ___이 마음속에 남았다" — 선생님이 무엇을 전달했나요?',
+      },
+    },
+    geol:{
+      keyword:'걸다', type:'polysemy', typeBadge:'다의어',
+      entries:[
+        {num:1,pos:'동사',meaning:'물건을 떨어지지 않게 어느 곳에 매달거나 올려놓다.',example:'옷을 옷걸이에 걸었다.'},
+        {num:2,pos:'동사',meaning:'목숨·명예 등을 어떤 일에 바치거나 내걸다.',example:'명예를 걸고 싸웠다.'},
+        {num:3,pos:'동사',meaning:'전화나 말을 먼저 시작하다.',example:'그에게 먼저 전화를 걸었다.'},
+        {num:4,pos:'동사',meaning:'기계 등의 시동을 켜거나 작동시키다.',example:'자동차 시동을 걸었다.'},
+      ],
+      answers:{'hw-geol1':0,'hw-geol2':1},
+      feedbacks:{wrong:'🔴 이 상황에서 "걸다"는 어떤 의미일까요?',right:'✅ "걸다"의 정확한 의미를 찾았어요! 거의 다 왔어요!'},
+      contextFor:{
+        'hw-geol1':'"벽에 그림을 ___었다" — 벽에 그림을 어떻게 했나요?',
+        'hw-geol2':'"목숨을 ___고 수사하겠다고" — 목숨을 어떻게 한다는 걸까요?',
+      },
+    }
+  },
+  solveOrder:['hw-mal1','hw-mal2','hw-geol1','hw-geol2'],
+  solvedLog:['[말]② 동물 확인','[말]① 언어 확인','[걸다]① 매달다 확인','[걸다]② 목숨을 바치다 확인'],
+  codeLog:[],
+  isFinalRoom:true,
+},
+];
+
+// ══════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════
+let state = {
+  roomIdx:0, solvedWords:{},
+  codeDigits:['_','_','_','_','_','_','_'],
+  currentHotword:null, currentWordKey:null,
+  playerName:'',
+  timerSeconds:600,
+  timerInterval:null,
+  totalPenalty:0,
+  wrongCount:0,
+  startTime:null,
+};
+
+// ══════════════════════════════════════════════════════════
+//  AUDIO
+// ══════════════════════════════════════════════════════════
+const audioCtx=(()=>{try{return new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}})();
+function playTone(f,d,t='sine',v=.12){
+  if(!audioCtx)return;
+  try{
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.connect(g);g.connect(audioCtx.destination);
+    o.type=t;o.frequency.value=f;
+    g.gain.setValueAtTime(v,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);
+    o.start();o.stop(audioCtx.currentTime+d);
+  }catch(e){}
+}
+function playClick(){playTone(800,.07,'square',.08);}
+function playWrong(){playTone(200,.15,'sawtooth',.14);setTimeout(()=>playTone(170,.2,'sawtooth',.09),110);}
+function playRight(){playTone(523,.1,'sine',.13);setTimeout(()=>playTone(659,.1,'sine',.1),110);setTimeout(()=>playTone(784,.22,'sine',.09),220);}
+function playCodeBeep(){for(let i=0;i<4;i++)setTimeout(()=>playTone(440+i*80,.07,'square',.1),i*75);}
+function playTransition(){playTone(300,.09,'sine');setTimeout(()=>playTone(400,.09,'sine'),90);setTimeout(()=>playTone(500,.13,'sine'),180);setTimeout(()=>playTone(620,.28,'sine'),270);}
+function playPenalty(){playTone(150,.08,'sawtooth',.2);setTimeout(()=>playTone(130,.12,'sawtooth',.18),80);setTimeout(()=>playTone(110,.18,'sawtooth',.15),160);}
+function playTimeout(){for(let i=0;i<5;i++)setTimeout(()=>playTone(200-i*15,.2,'sawtooth',.2),i*200);}
+
+// ══════════════════════════════════════════════════════════
+//  TIMER
+// ══════════════════════════════════════════════════════════
+function startTimer(){
+  clearInterval(state.timerInterval);
+  state.timerSeconds=600;
+  state.startTime=Date.now();
+  state.timerInterval=setInterval(tickTimer,1000);
+  updateTimerDisplay();
+}
+function tickTimer(){
+  state.timerSeconds--;
+  updateTimerDisplay();
+  if(state.timerSeconds<=0){
+    clearInterval(state.timerInterval);
+    triggerTimeout();
+  }
+}
+function applyPenalty(){
+  state.timerSeconds=Math.max(0,state.timerSeconds-10);
+  state.totalPenalty+=10;
+  state.wrongCount++;
+  updateTimerDisplay();
+  showPenaltyEffect();
+  playPenalty();
+  addLog(`⚠ 오답 패널티! -10초 (남은 시간: ${formatTime(state.timerSeconds)})`, 'error');
+  if(state.timerSeconds<=0){
+    clearInterval(state.timerInterval);
+    setTimeout(triggerTimeout,500);
+  }
+}
+function updateTimerDisplay(){
+  const el=document.getElementById('timer-display');
+  const hud=document.getElementById('hud-timer');
+  if(!el)return;
+  el.textContent=formatTime(state.timerSeconds);
+  hud.className='';
+  hud.id='hud-timer';
+  if(state.timerSeconds<=60)hud.classList.add('danger');
+  else if(state.timerSeconds<=180)hud.classList.add('warn');
+}
+function formatTime(s){
+  const m=Math.floor(s/60),sec=s%60;
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+function showPenaltyEffect(){
+  // 화면 붉은 플래시
+  const over=document.createElement('div');
+  over.id='penalty-overlay';
+  document.body.appendChild(over);
+  const badge=document.createElement('div');
+  badge.className='penalty-badge';
+  badge.textContent='-10초!';
+  document.body.appendChild(badge);
+  setTimeout(()=>{over.remove();badge.remove();},900);
+}
+function triggerTimeout(){
+  clearInterval(state.timerInterval);
+  playTimeout();
+  const elapsed=Math.round((Date.now()-state.startTime)/1000);
+  const msg=document.getElementById('timeout-msg');
+  msg.innerHTML=`<strong style="color:var(--er)">${state.playerName || '탐정'}</strong>님, 제한 시간이 초과되었습니다.<br>
+    사전 세계의 바이러스가 시스템을 완전히 장악했습니다...<br>
+    하지만 포기하지 마세요. 다시 도전하면 반드시 탈출할 수 있습니다!`;
+  document.getElementById('timeout-stat').innerHTML=`
+    <div class="timeout-stat-row"><span class="stat-label">진행한 방</span><span class="stat-value">${state.roomIdx+1} / 7</span></div>
+    <div class="timeout-stat-row"><span class="stat-label">경과 시간</span><span class="stat-value">${formatTime(elapsed)}</span></div>
+    <div class="timeout-stat-row"><span class="stat-label">오답 횟수</span><span class="stat-value" style="color:var(--er)">${state.wrongCount}회</span></div>
+    <div class="timeout-stat-row"><span class="stat-label">누적 패널티</span><span class="stat-value" style="color:var(--er)">${state.totalPenalty}초</span></div>`;
+  showScreen('screen-timeout');
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOG
+// ══════════════════════════════════════════════════════════
+function addLog(msg,type='default'){
+  const list=document.getElementById('log-list');
+  const now=new Date();
+  const t=`${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+  const el=document.createElement('div');
+  el.className=`log-entry ${type}`;
+  el.innerHTML=`<span class="log-time">${t}</span>${msg}`;
+  list.appendChild(el);
+  list.scrollTop=list.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════════
+//  PARTICLES
+// ══════════════════════════════════════════════════════════
+function spawnParticles(el,count=12){
+  const rect=el.getBoundingClientRect();
+  for(let i=0;i<count;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const angle=(i/count)*360;
+    const dist=28+Math.random()*38;
+    const dx=Math.cos(angle*Math.PI/180)*dist;
+    const dy=Math.sin(angle*Math.PI/180)*dist;
+    p.style.cssText=`left:${rect.left+rect.width/2}px;top:${rect.top+rect.height/2}px;--dx:${dx}px;--dy:${dy}px;position:fixed;z-index:600;background:${i%3===0?'var(--tg)':i%3===1?'var(--am)':'var(--bl)'};`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),1000);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  SCREENS
+// ══════════════════════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════
+//  HUD
+// ══════════════════════════════════════════════════════════
+function buildProgressDots(){
+  const c=document.getElementById('hud-progress');
+  c.innerHTML='';
+  ROOMS.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='progress-dot';
+    d.id=`pdot-${i}`;
+    c.appendChild(d);
+  });
+}
+function updateHUD(){
+  const room=ROOMS[state.roomIdx];
+  document.getElementById('hud-room-text').textContent=`${room.badge}/7`;
+  const pEl=document.getElementById('hud-player');
+  if(state.playerName) pEl.innerHTML=`탐정: <span>${state.playerName}</span>`;
+
+  // 7자리 코드 자리
+  for(let i=0;i<7;i++){
+    const el=document.getElementById(`digit-${i}`);
+    if(!el)continue;
+    const val=state.codeDigits[i];
+    el.textContent=val==='_'?'_':val;
+    el.className='code-digit'+(val!=='_'?' filled':'');
+  }
+  // 진행 점
+  ROOMS.forEach((_,i)=>{
+    const dot=document.getElementById(`pdot-${i}`);
+    if(!dot)return;
+    dot.className='progress-dot';
+    if(i<state.roomIdx)dot.classList.add('done');
+    else if(i===state.roomIdx)dot.classList.add('current');
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  ROOM ART SVGs
+// ══════════════════════════════════════════════════════════
+function getRoomArt(id){
+  const a={
+    room1:`<svg width="100%" height="100%" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="220" fill="#080b0e"/>
+      <rect x="0" y="155" width="400" height="65" fill="#0d1015"/>
+      <line x1="0" y1="155" x2="400" y2="155" stroke="#1e2530" stroke-width="1"/>
+      <rect x="15" y="75" width="130" height="7" fill="#1a2030" rx="2"/>
+      <rect x="15" y="82" width="4" height="73" fill="#151a22"/>
+      <rect x="141" y="82" width="4" height="73" fill="#151a22"/>
+      <ellipse cx="48" cy="67" rx="14" ry="17" fill="#c8a835" opacity=".9"/><line x1="48" y1="50" x2="50" y2="42" stroke="#3a5a20" stroke-width="2"/>
+      <ellipse cx="78" cy="65" rx="13" ry="16" fill="#c8a835" opacity=".85"/><line x1="78" y1="49" x2="80" y2="41" stroke="#3a5a20" stroke-width="2"/>
+      <ellipse cx="107" cy="68" rx="14" ry="17" fill="#c8a835" opacity=".9"/><line x1="107" y1="51" x2="109" y2="43" stroke="#3a5a20" stroke-width="2"/>
+      <circle cx="48" cy="57" r="2" fill="white" opacity=".4"/>
+      <rect x="215" y="115" width="165" height="50" fill="#0a1520"/>
+      <path d="M235 130 L365 130 L355 152 L245 152 Z" fill="#1a3050" stroke="#2a4570" stroke-width="1"/>
+      <rect x="288" y="105" width="4" height="30" fill="#2a4060"/>
+      <path d="M268 110 L292 105 L292 122 Z" fill="#1a5080" opacity=".8"/>
+      <path d="M215 152 Q235 145 255 152 Q275 159 295 152 Q315 145 335 152 Q355 159 380 152 L380 172 L215 172 Z" fill="#0d1f35" opacity=".6"/>
+      <circle cx="295" cy="97" r="2" fill="#ffdd55" opacity=".8"/>
+      <text x="60" y="104" font-size="8" fill="#3a4050" font-family="monospace">// 과일 창고</text>
+      <text x="248" y="174" font-size="8" fill="#1a3050" font-family="monospace">// 항구</text>
+      <line x1="0" y1="92" x2="400" y2="92" stroke="#ff3355" stroke-width=".4" opacity=".12"/>
+    </svg>`,
+
+    room2:`<svg width="100%" height="100%" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="220" fill="#060810"/>
+      ${[0,1,2,3,4].map(i=>`<rect x="${i*80}" y="0" width="2" height="160" fill="#111520" opacity=".7"/>
+        <rect x="${i*80}" y="38" width="80" height="3" fill="#151c28"/>
+        <rect x="${i*80}" y="78" width="80" height="3" fill="#151c28"/>
+        <rect x="${i*80}" y="118" width="80" height="3" fill="#151c28"/>`).join('')}
+      <rect x="5" y="42" width="12" height="35" fill="#1a3a5a" rx="1"/>
+      <rect x="18" y="40" width="10" height="37" fill="#3a1a1a" rx="1"/>
+      <rect x="29" y="44" width="8" height="33" fill="#1a3a2a" rx="1"/>
+      <rect x="38" y="41" width="14" height="36" fill="#2a2a1a" rx="1"/>
+      <rect x="53" y="45" width="9" height="32" fill="#3a2a1a" rx="1"/>
+      <rect x="85" y="42" width="11" height="36" fill="#1a2a3a" rx="1"/>
+      <rect x="97" y="44" width="15" height="34" fill="#2a1a3a" rx="1"/>
+      <rect x="148" y="42" width="11" height="35" fill="#2a3a1a" rx="1"/>
+      <rect x="165" y="44" width="8" height="37" fill="#3a2a2a" rx="1"/>
+      <ellipse cx="200" cy="0" rx="150" ry="80" fill="#ffbb00" opacity=".025"/>
+      <rect x="145" y="55" width="95" height="58" fill="#1a1a0e" stroke="#2a2a1a" stroke-width="1" transform="rotate(-2,192,84)"/>
+      <line x1="150" y1="70" x2="235" y2="70" stroke="#2a2a15" stroke-width=".8"/>
+      <line x1="150" y1="80" x2="235" y2="80" stroke="#2a2a15" stroke-width=".8"/>
+      <line x1="150" y1="90" x2="235" y2="90" stroke="#2a2a15" stroke-width=".8"/>
+      <rect x="252" y="48" width="82" height="62" fill="#0e1a0e" stroke="#1a2a1a" stroke-width="1" transform="rotate(3,293,79)"/>
+      <rect x="0" y="158" width="400" height="62" fill="#050608"/>
+      <line x1="0" y1="158" x2="400" y2="158" stroke="#0f1218" stroke-width="1"/>
+      <line x1="0" y1="52" x2="400" y2="52" stroke="#00ff88" stroke-width=".3" opacity=".15"/>
+    </svg>`,
+
+    room3:`<svg width="100%" height="100%" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+      <defs><filter id="gr"><feGaussianBlur stdDeviation="2.5"/></filter></defs>
+      <rect width="400" height="220" fill="#040508"/>
+      ${[0,1,2,3,4].map(i=>`
+        <rect x="${18+i*72}" y="18" width="52" height="132" fill="#0a0d12" stroke="#0f1520" stroke-width="1" rx="2"/>
+        ${[0,1,2,3,4,5].map(j=>`
+          <rect x="${22+i*72}" y="${24+j*20}" width="44" height="14" fill="#0c1018" rx="1"/>
+          <circle cx="${28+i*72}" cy="${31+j*20}" r="2" fill="${(i+j)%2===0?'#00ff88':'#ff3355'}" opacity="${.3+((i*j)%5)*.1}"/>
+          <rect x="${35+i*72}" y="${28+j*20}" width="26" height="2" fill="#0f1820" rx="1"/>
+        `).join('')}
+      `).join('')}
+      <g opacity=".65" transform="translate(352,28)">
+        <line x1="0" y1="-16" x2="0" y2="16" stroke="#aaddff" stroke-width="1.5"/>
+        <line x1="-16" y1="0" x2="16" y2="0" stroke="#aaddff" stroke-width="1.5"/>
+        <line x1="-11" y1="-11" x2="11" y2="11" stroke="#aaddff" stroke-width="1.5"/>
+        <line x1="11" y1="-11" x2="-11" y2="11" stroke="#aaddff" stroke-width="1.5"/>
+        <circle cx="0" cy="0" r="3.5" fill="#cceeff" opacity=".8"/>
+      </g>
+      <g opacity=".35" transform="translate(370,62) scale(.55)">
+        <line x1="0" y1="-16" x2="0" y2="16" stroke="#aaddff" stroke-width="2"/>
+        <line x1="-16" y1="0" x2="16" y2="0" stroke="#aaddff" stroke-width="2"/>
+        <line x1="-11" y1="-11" x2="11" y2="11" stroke="#aaddff" stroke-width="2"/>
+        <line x1="11" y1="-11" x2="-11" y2="11" stroke="#aaddff" stroke-width="2"/>
+      </g>
+      <rect x="38" y="162" width="124" height="44" fill="#0d1520" rx="4" stroke="#1a2535" stroke-width="1"/>
+      ${[0,1,2].map(i=>`<rect x="${46+i*26}" y="${167}" width="20" height="14" fill="#0a1830" rx="2" opacity=".7"/>`).join('')}
+      <circle cx="52" cy="172" r="3.5" fill="#1a2540" opacity=".9"/>
+      <circle cx="60" cy="172" r="3.5" fill="#1a2540" opacity=".9"/>
+      <circle cx="78" cy="172" r="3.5" fill="#1a2540" opacity=".9"/>
+      <circle cx="86" cy="172" r="3.5" fill="#1a2540" opacity=".9"/>
+      <circle cx="104" cy="172" r="3.5" fill="#1a2540" opacity=".9"/>
+      <circle cx="112" cy="172" r="3.5" fill="#1a2540" opacity=".9"/>
+      <rect x="38" y="202" width="14" height="6" fill="#0d1520" rx="7"/>
+      <rect x="148" y="202" width="14" height="6" fill="#0d1520" rx="7"/>
+      <text x="8" y="215" font-size="6" fill="#1a2535" font-family="monospace">// SERVER_FINAL | LOCKDOWN</text>
+      <circle cx="385" cy="13" r="5" fill="#ff3355" opacity=".55" filter="url(#gr)"/>
+      <circle cx="385" cy="13" r="3" fill="#ff3355"/>
+    </svg>`,
+
+    room4:`<svg width="100%" height="100%" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="220" fill="#0a0806"/>
+      <!-- 기차역 폐허 배경 -->
+      <rect x="0" y="140" width="400" height="80" fill="#0d0b09"/>
+      <!-- 플랫폼 -->
+      <rect x="0" y="140" width="400" height="8" fill="#1a1510"/>
+      <!-- 철로 -->
+      <line x1="0" y1="165" x2="400" y2="165" stroke="#2a2520" stroke-width="3"/>
+      <line x1="0" y1="180" x2="400" y2="180" stroke="#2a2520" stroke-width="3"/>
+      ${[0,1,2,3,4,5,6,7,8,9].map(i=>`<line x1="${i*42}" y1="162" x2="${i*42+28}" y2="162" stroke="#1a1510" stroke-width="2"/>
+        <line x1="${i*42}" y1="183" x2="${i*42+28}" y2="183" stroke="#1a1510" stroke-width="2"/>`).join('')}
+      <!-- 기차 실루엣 -->
+      <rect x="60" y="110" width="230" height="35" fill="#1a1510" rx="4" stroke="#2a2018" stroke-width="1"/>
+      ${[0,1,2,3].map(i=>`<rect x="${70+i*54}" y="116" width="40" height="22" fill="#0f0e0c" rx="2"/>
+        <rect x="${74+i*54}" y="119" width="32" height="12" fill="#151210" rx="1" opacity=".7"/>`).join('')}
+      <!-- 불꽃 효과 -->
+      <ellipse cx="310" cy="108" rx="18" ry="12" fill="#ff4400" opacity=".3"/>
+      <ellipse cx="310" cy="105" rx="12" ry="8" fill="#ff8800" opacity=".4"/>
+      <ellipse cx="310" cy="102" rx="7" ry="5" fill="#ffcc00" opacity=".5"/>
+      <!-- 연기 -->
+      <ellipse cx="315" cy="90" rx="20" ry="10" fill="#1a1510" opacity=".6"/>
+      <ellipse cx="325" cy="75" rx="15" ry="8" fill="#1a1510" opacity=".4"/>
+      <!-- 역 간판 -->
+      <rect x="160" y="20" width="80" height="30" fill="#1a1510" stroke="#2a2018" stroke-width="1"/>
+      <text x="165" y="40" font-size="11" fill="#3a3020" font-family="serif" font-weight="bold">폐역</text>
+      <text x="5" y="215" font-size="6" fill="#2a2018" font-family="monospace">// ABANDONED_STATION | FIRE_DETECTED</text>
+    </svg>`,
+
+    room5:`<svg width="100%" height="100%" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="220" fill="#080c10"/>
+      <!-- 밤하늘 -->
+      ${[...Array(20)].map((_,i)=>`<circle cx="${(i*73+31)%400}" cy="${(i*47+15)%100}" r="1" fill="white" opacity="${.1+.2*(i%3)}"/>`).join('')}
+      <!-- 강물 -->
+      <rect x="0" y="130" width="400" height="90" fill="#0a1520"/>
+      <path d="M0 135 Q100 128 200 135 Q300 142 400 135 L400 220 L0 220Z" fill="#0d1e30" opacity=".8"/>
+      <!-- 물결 -->
+      ${[0,1,2].map(i=>`<path d="M0 ${148+i*12} Q50 ${144+i*12} 100 ${148+i*12} Q150 ${152+i*12} 200 ${148+i*12} Q250 ${144+i*12} 300 ${148+i*12} Q350 ${152+i*12} 400 ${148+i*12}" stroke="#1a3050" stroke-width="1" fill="none" opacity=".5"/>`).join('')}
+      <!-- 다리 구조물 -->
+      <rect x="60" y="80" width="280" height="12" fill="#1a2030" rx="2"/>
+      <rect x="60" y="92" width="280" height="4" fill="#151a28"/>
+      <!-- 다리 기둥들 -->
+      ${[0,1,2,3].map(i=>`<rect x="${80+i*65}" y="92" width="12" height="42" fill="#1a2030"/>
+        <rect x="${82+i*65}" y="130" width="8" height="20" fill="#141820"/>`).join('')}
+      <!-- 다리 난간 -->
+      ${[0,1,2,3,4,5,6,7,8,9].map(i=>`<rect x="${65+i*27}" y="76" width="3" height="18" fill="#1a2535" opacity=".8"/>`).join('')}
+      <!-- 안개 -->
+      <rect x="0" y="100" width="400" height="40" fill="url(#fog)" opacity=".4"/>
+      <defs><linearGradient id="fog" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0d1825" stop-opacity=".8"/>
+        <stop offset="100%" stop-color="#0d1825" stop-opacity="0"/>
+      </linearGradient></defs>
+      <!-- 달 반사 -->
+      <ellipse cx="200" cy="160" rx="30" ry="8" fill="#1a3050" opacity=".3"/>
+      <text x="8" y="215" font-size="6" fill="#1a2535" font-family="monospace">// RIVERSIDE | FOG_LEVEL: HIGH</text>
+    </svg>`,
+
+    room6:`<svg width="100%" height="100%" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="220" fill="#060a08"/>
+      <!-- 수술실 조명 -->
+      <ellipse cx="200" cy="0" rx="120" ry="70" fill="#00ff88" opacity=".025"/>
+      <!-- 수술대 -->
+      <rect x="120" y="120" width="160" height="12" fill="#1a2a1a" rx="2"/>
+      <rect x="130" y="132" width="140" height="35" fill="#0f1a0f" rx="2" stroke="#1a2a1a" stroke-width="1"/>
+      <rect x="148" y="108" width="4" height="15" fill="#1a2a1a"/>
+      <rect x="248" y="108" width="4" height="15" fill="#1a2a1a"/>
+      <!-- 의료 기기 -->
+      <rect x="20" y="60" width="60" height="80" fill="#0d1510" stroke="#1a2a1a" stroke-width="1" rx="3"/>
+      ${[0,1,2,3].map(i=>`<rect x="26" y="${66+i*18}" width="48" height="12" fill="#0a1008" rx="1"/>
+        <circle cx="32" cy="${72+i*18}" r="3" fill="#00ff88" opacity="${.4+i*.1}"/>`).join('')}
+      <!-- 칠판 -->
+      <rect x="280" y="30" width="100" height="80" fill="#0a1208" stroke="#1a2a15" stroke-width="1"/>
+      <text x="290" y="50" font-size="8" fill="#1a3a20" font-family="monospace">암호 A:</text>
+      <text x="290" y="65" font-size="8" fill="#1a3a20" font-family="monospace">암호 B:</text>
+      <text x="290" y="80" font-size="8" fill="#1a3a20" font-family="monospace">암호 C:</text>
+      <line x1="285" y1="55" x2="375" y2="55" stroke="#1a3a20" stroke-width=".5"/>
+      <line x1="285" y1="70" x2="375" y2="70" stroke="#1a3a20" stroke-width=".5"/>
+      <line x1="285" y1="85" x2="375" y2="85" stroke="#1a3a20" stroke-width=".5"/>
+      <!-- 손 해부도 -->
+      <path d="M190 140 Q195 120 200 115 Q205 110 210 115 Q215 120 210 140" stroke="#1a2a1a" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <path d="M200 140 Q205 118 210 113 Q215 108 220 113 Q225 118 220 140" stroke="#1a2a1a" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M208 140 Q213 120 218 115 Q223 110 228 115 Q233 120 228 140" stroke="#1a2a1a" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <text x="8" y="215" font-size="6" fill="#1a2a15" font-family="monospace">// SECRET_LAB | ANALYSIS_MODE</text>
+    </svg>`,
+
+    room7:`<svg width="100%" height="100%" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+      <defs><radialGradient id="rg7" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#1a0a00" stop-opacity=".8"/>
+        <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+      </radialGradient></defs>
+      <rect width="400" height="220" fill="#030406"/>
+      <!-- 마스터 콘솔 -->
+      <rect x="60" y="30" width="280" height="120" fill="#080c10" stroke="#1a2535" stroke-width="2" rx="6"/>
+      <rect x="68" y="38" width="264" height="106" fill="#050709" rx="4"/>
+      <!-- 화면 글리치 효과 -->
+      <rect x="68" y="55" width="264" height="3" fill="#00ff88" opacity=".08"/>
+      <rect x="68" y="85" width="264" height="2" fill="#00aaff" opacity=".06"/>
+      <rect x="68" y="115" width="264" height="3" fill="#ff3355" opacity=".07"/>
+      <!-- 텍스트 라인들 -->
+      ${[0,1,2,3,4,5].map(i=>`<rect x="75" y="${45+i*16}" width="${80+Math.sin(i*1.3)*60}" height="6" fill="#0a2015" rx="2" opacity=".8"/>`).join('')}
+      <!-- 경고 화면 -->
+      <rect x="280" y="45" width="44" height="28" fill="#1a0808" rx="2" stroke="#ff3355" stroke-width="1" opacity=".7"/>
+      <text x="284" y="57" font-size="6" fill="#ff3355" font-family="monospace" opacity=".8">ALERT</text>
+      <text x="284" y="68" font-size="5" fill="#ff3355" font-family="monospace" opacity=".6">LOCK</text>
+      <!-- 말 실루엣 -->
+      <path d="M330 100 Q340 85 355 80 Q365 78 370 85 Q375 92 370 100 Q380 95 385 100 Q382 110 375 112 Q370 120 355 118 Q340 116 330 108 Z" fill="#1a1510" opacity=".8"/>
+      <line x1="355" y1="118" x2="352" y2="140" stroke="#1a1510" stroke-width="4"/>
+      <line x1="362" y1="118" x2="365" y2="140" stroke="#1a1510" stroke-width="4"/>
+      <line x1="340" y1="115" x2="336" y2="138" stroke="#1a1510" stroke-width="4"/>
+      <line x1="348" y1="116" x2="346" y2="140" stroke="#1a1510" stroke-width="4"/>
+      <!-- 바닥 버튼 패널 -->
+      <rect x="60" y="160" width="280" height="40" fill="#080c10" stroke="#1a2535" stroke-width="1" rx="3"/>
+      ${[0,1,2,3,4,5,6].map(i=>`<rect x="${72+i*36}" y="168" width="26" height="24" fill="#0a0e14" rx="2" stroke="#1a2535" stroke-width="1"/>
+        <circle cx="${85+i*36}" cy="180" r="5" fill="${['#ff3355','#ffb300','#00ff88','#00aaff','#ff3355','#ffb300','#00ff88'][i]}" opacity=".3"/>`).join('')}
+      <text x="8" y="215" font-size="6" fill="#1a2535" font-family="monospace">// MASTER_CONTROL | FINAL_LOCKDOWN | KEY_NEEDED</text>
+      <rect x="0" y="0" width="400" height="220" fill="url(#rg7)"/>
+    </svg>`,
+  };
+  return a[id]||'';
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOAD ROOM
+// ══════════════════════════════════════════════════════════
+function loadRoom(idx){
+  state.roomIdx=idx;
+  state.solvedWords={};
+  const room=ROOMS[idx];
+  document.getElementById('scene-room-badge').textContent=room.badge;
+  document.getElementById('scene-title').textContent=room.title;
+
+  const body=document.getElementById('scene-body');
+  body.innerHTML='';
+
+  const imgDiv=document.createElement('div');
+  imgDiv.className='scene-image';
+  imgDiv.innerHTML=`<div class="scene-canvas">${getRoomArt(room.art)}</div>`;
+  body.appendChild(imgDiv);
+
+  const textBox=document.createElement('div');
+  textBox.className='scene-text-box';
+  textBox.innerHTML=`<p>${room.text}</p>`;
+  body.appendChild(textBox);
+
+  const hintBox=document.createElement('div');
+  hintBox.className='hint-box';
+  hintBox.innerHTML=`<span class="hint-icon">💡</span><span>${room.hint}</span>`;
+  body.appendChild(hintBox);
+
+  document.getElementById('log-list').innerHTML='';
+  document.getElementById('memo-clues').innerHTML='';
+  addLog(`[${room.badge}] 환경 초기화 완료`,'info');
+  addLog(`황색 단어 ${room.solveOrder.length}개 감지됨`,'default');
+
+  updateHUD();
+  showScreen('screen-game');
+}
+
+// ══════════════════════════════════════════════════════════
+//  DICT
+// ══════════════════════════════════════════════════════════
+function openDict(wordKey,hotwordId){
+  if(state.solvedWords[hotwordId]){playClick();return;}
+  playClick();
+  const room=ROOMS[state.roomIdx];
+  const wd=room.words[wordKey];
+  state.currentHotword=hotwordId;
+  state.currentWordKey=wordKey;
+
+  document.getElementById('dict-keyword').textContent=wd.keyword;
+  const badge=document.getElementById('dict-type-badge');
+  badge.textContent=wd.typeBadge;
+  badge.className=`dict-type-badge ${wd.type==='homonym'?'badge-homonym':'badge-polysemy'}`;
+
+  const body=document.getElementById('dict-body');
+  body.innerHTML='';
+
+  const ctx=wd.contextFor[hotwordId];
+  if(ctx){
+    const cb=document.createElement('div');
+    cb.className='dict-context-box';
+    cb.innerHTML=`<div class="dict-context-label">📍 문맥 단서</div>
+      <div class="dict-context-text">${ctx.replace(/___/g,`<span class="highlight-word">${wd.keyword}</span>`)}</div>`;
+    body.appendChild(cb);
+  }
+
+  const el2=document.createElement('div');
+  el2.className='dict-entries-label';
+  el2.textContent=`${wd.keyword} — 모든 뜻`;
+  body.appendChild(el2);
+
+  wd.entries.forEach((entry,i)=>{
+    const el=document.createElement('div');
+    el.className='dict-entry';
+    el.innerHTML=`<div class="entry-header"><div class="entry-num">${entry.num}</div><div class="entry-pos">${entry.pos}</div></div>
+      <div class="entry-meaning">${entry.meaning}</div>
+      <div class="entry-example">${entry.example}</div>`;
+    el.addEventListener('click',()=>selectEntry(i,el,wd,hotwordId));
+    body.appendChild(el);
+  });
+
+  const fb=document.createElement('div');
+  fb.className='dict-feedback';fb.id='dict-feedback';
+  body.appendChild(fb);
+
+  document.getElementById('dict-overlay').classList.add('open');
+  addLog(`[사전] "${wd.keyword}" 검색됨`,'info');
+}
+function closeDict(){document.getElementById('dict-overlay').classList.remove('open');}
+function closeDictIfOutside(e){if(e.target===document.getElementById('dict-overlay'))closeDict();}
+
+// ══════════════════════════════════════════════════════════
+//  SELECT ENTRY
+// ══════════════════════════════════════════════════════════
+function selectEntry(idx,el,wd,hotwordId){
+  if(state.solvedWords[hotwordId])return;
+  const correct=wd.answers[hotwordId];
+  const fb=document.getElementById('dict-feedback');
+  document.querySelectorAll('.dict-entry').forEach(e=>e.classList.remove('selected-wrong','selected-right'));
+
+  if(idx===correct){
+    el.classList.add('selected-right');
+    fb.className='dict-feedback show-ok';
+    fb.textContent=wd.feedbacks.right;
+    playRight();
+    state.solvedWords[hotwordId]=true;
+    const hw=document.getElementById(hotwordId);
+    if(hw){hw.classList.add('solved');spawnParticles(hw);}
+    const room=ROOMS[state.roomIdx];
+    const si=room.solveOrder.indexOf(hotwordId);
+    if(si>=0&&room.solvedLog[si])addLog(room.solvedLog[si],'success');
+    addClue(wd.keyword,el.querySelector('.entry-meaning').textContent.split('.')[0]);
+    setTimeout(()=>{closeDict();setTimeout(()=>checkRoomClear(),400);},1100);
+  } else {
+    el.classList.add('selected-wrong');
+    fb.className='dict-feedback show-error';
+    fb.textContent=wd.feedbacks.wrong;
+    playWrong();
+    addLog(`오답: "${wd.entries[idx].meaning.substring(0,22)}..."`,'error');
+    applyPenalty();
+  }
+}
+
+function addClue(keyword,meaning){
+  const c=document.getElementById('memo-clues');
+  const chip=document.createElement('div');
+  chip.className='clue-chip';
+  chip.innerHTML=`<span class="clue-key">${keyword}</span><span>→ ${meaning.substring(0,18)}…</span>`;
+  c.appendChild(chip);
+}
+
+// ══════════════════════════════════════════════════════════
+//  ROOM CLEAR CHECK
+// ══════════════════════════════════════════════════════════
+function checkRoomClear(){
+  const room=ROOMS[state.roomIdx];
+  if(!room.solveOrder.every(hw=>state.solvedWords[hw]))return;
+
+  if(room.isFinalRoom){
+    clearInterval(state.timerInterval);
+    addLog('모든 단어 해독 완료!','success');
+    addLog('탈출 시스템 해제 중...','info');
+    playTransition();
+    setTimeout(showClearScreen,1200);
+    return;
+  }
+
+  if(!room.noCode){
+    room.digitIndexes.forEach((di,i)=>{
+      state.codeDigits[di]=room.codeDigits[i];
+      if(room.codeLog[i])addLog(room.codeLog[i],'success');
+      setTimeout(()=>{playCodeBeep();updateHUD();},i*280);
+    });
+  }
+
+  addLog(`${room.badge} 탈출 완료! 다음 방으로 이동...`,'info');
+  setTimeout(()=>showTransition(state.roomIdx+1),800);
+}
+
+// ══════════════════════════════════════════════════════════
+//  TRANSITION
+// ══════════════════════════════════════════════════════════
+function showTransition(nextIdx){
+  playTransition();
+  const ov=document.getElementById('transition-overlay');
+  const fill=document.getElementById('trans-fill');
+  const msg=document.getElementById('trans-msg');
+  const code=document.getElementById('trans-code');
+
+  msg.textContent=`ROOM ${nextIdx+1} 접근 코드 해독 중...`;
+  code.textContent=state.codeDigits.join('');
+  code.style.display='none';
+
+  ov.classList.add('active');
+  setTimeout(()=>{fill.style.width='100%';},100);
+  setTimeout(()=>{code.style.display='block';playCodeBeep();},1000);
+  setTimeout(()=>{ov.classList.remove('active');fill.style.width='0';loadRoom(nextIdx);},2100);
+}
+
+// ══════════════════════════════════════════════════════════
+//  CLEAR SCREEN
+// ══════════════════════════════════════════════════════════
+function showClearScreen(){
+  const elapsed=Math.round((Date.now()-state.startTime)/1000);
+  const remaining=state.timerSeconds;
+  const grade=remaining>480?'S':remaining>360?'A':remaining>240?'B':remaining>120?'C':'D';
+  const gradeColor=remaining>480?'gold':remaining>360?'green':'red';
+
+  document.getElementById('clear-player-name').textContent=`🏆 ${state.playerName} 탐정`;
+  document.getElementById('clear-stats').innerHTML=`
+    <div class="clear-stat-row">
+      <span class="clear-stat-label">걸린 시간</span>
+      <span class="clear-stat-value">${formatTime(elapsed)}</span>
+    </div>
+    <div class="clear-stat-row">
+      <span class="clear-stat-label">남은 시간</span>
+      <span class="clear-stat-value green">${formatTime(remaining)}</span>
+    </div>
+    <div class="clear-stat-row">
+      <span class="clear-stat-label">오답 횟수</span>
+      <span class="clear-stat-value ${state.wrongCount>0?'red':'green'}">${state.wrongCount}회</span>
+    </div>
+    <div class="clear-stat-row">
+      <span class="clear-stat-label">패널티 합계</span>
+      <span class="clear-stat-value ${state.totalPenalty>0?'red':'green'}">${state.totalPenalty}초</span>
+    </div>
+    <div class="clear-stat-row">
+      <span class="clear-stat-label">탈출 등급</span>
+      <span class="clear-stat-value ${gradeColor}">${grade} 등급</span>
+    </div>`;
+  showScreen('screen-clear');
+}
+
+// ══════════════════════════════════════════════════════════
+//  START / RESTART
+// ══════════════════════════════════════════════════════════
+function startGame(){
+  const nameEl=document.getElementById('player-name-input');
+  const name=nameEl.value.trim();
+  if(!name)return;
+  if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();
+
+  state={
+    roomIdx:0, solvedWords:{},
+    codeDigits:['_','_','_','_','_','_','_'],
+    currentHotword:null, currentWordKey:null,
+    playerName:name,
+    timerSeconds:600,
+    timerInterval:null,
+    totalPenalty:0,
+    wrongCount:0,
+    startTime:Date.now(),
+  };
+
+  buildProgressDots();
+  startTimer();
+  playTransition();
+  loadRoom(0);
+}
+
+function restartGame(){
+  clearInterval(state.timerInterval);
+  showScreen('screen-intro');
+  document.getElementById('player-name-input').value='';
+  document.getElementById('btn-start-game').disabled=true;
+  // 타이머 표시 초기화
+  const td=document.getElementById('timer-display');
+  if(td)td.textContent='10:00';
+  const ht=document.getElementById('hud-timer');
+  if(ht){ht.className='';ht.id='hud-timer';}
+}
+
+// ── 이름 입력 감지 → 버튼 활성화 ──
+document.getElementById('player-name-input').addEventListener('input',function(){
+  const btn=document.getElementById('btn-start-game');
+  btn.disabled=!this.value.trim();
+});
+document.getElementById('player-name-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&this.value.trim())startGame();
+});
+
+// ── 인트로 터미널 애니메이션 ──
+(function boot(){
+  const lines=['> 국어사전 시스템 v2.4 초기화...','> 오류 감지: 단어 뜻 충돌 7,391건','> 7개 방 잠금 상태 확인됨','> 탈출 프로토콜 로드 완료. 접속자 인증 필요.'];
+  const container=document.querySelector('.intro-container');
+  if(!container)return;
+  const termDiv=document.createElement('div');
+  termDiv.style.cssText='width:100%;font-size:10px;color:#1a3a25;font-family:monospace;text-align:left;min-height:56px;';
+  const nameSection=container.querySelector('.name-input-section');
+  container.insertBefore(termDiv,nameSection);
+  let li=0;
+  function nextLine(){
+    if(li>=lines.length)return;
+    const line=lines[li++];
+    let ci=0;
+    const span=document.createElement('div');
+    termDiv.appendChild(span);
+    const t=setInterval(()=>{
+      span.textContent=line.substring(0,++ci);
+      if(ci>=line.length){
+        clearInterval(t);
+        if(li<lines.length)setTimeout(nextLine,250);
+        else span.style.color='var(--tg)';
+      }
+    },32);
+  }
+  setTimeout(nextLine,500);
+})();
+</script>
+</body>
+</html>
